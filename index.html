@@ -1,1 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JJVISIONÁRIO DIGITAL</title>
+    <style>
+        body { background: #050505; color: white; font-family: sans-serif; margin: 0; text-align: center; }
+        #player-area { width: 100%; aspect-ratio: 16/9; background: #000; border-bottom: 2px solid #ff0055; }
+        iframe { width: 100%; height: 100%; border: none; }
+        .srv-bar { display: flex; justify-content: center; gap: 10px; padding: 10px; background: #111; }
+        .btn { background: #222; color: #00d4ff; border: 1px solid #444; padding: 10px; border-radius: 5px; cursor: pointer; }
+        .search-bar { padding: 20px; }
+        input { padding: 12px; border-radius: 8px; border: 1px solid #333; background: #111; color: white; width: 60%; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; padding: 15px; }
+        .card { background: #121212; border-radius: 10px; overflow: hidden; border: 1px solid #222; font-size: 11px; }
+        .card img { width: 100%; height: 150px; object-fit: cover; }
+        #ep-list { display: none; padding: 15px; grid-template-columns: repeat(4, 1fr); gap: 8px; background: #0d0d0f; }
+    </style>
+</head>
+<body>
 
+<div id="player-area">
+    <div style="padding-top: 15%; color: #444;">JJVISIONÁRIO - AGUARDANDO VÍDEO</div>
+</div>
+
+<div class="srv-bar">
+    <button class="btn" onclick="setSrv(1)">SERVIDOR 1</button>
+    <button class="btn" onclick="setSrv(2)">SERVIDOR 2</button>
+</div>
+
+<div class="search-bar">
+    <input type="text" id="inp" placeholder="Buscar anime...">
+    <button class="btn" onclick="search()">BUSCAR</button>
+</div>
+
+<div id="ep-list"></div>
+<div class="grid" id="g"></div>
+
+<script>
+    let mid = '', ep = 1, srv = 1;
+
+    async function search() {
+        const query = document.getElementById('inp').value;
+        if(query.length < 3) return;
+        const r = await fetch(`https://api.jikan.moe/v4/anime?q=${query}&limit=20`);
+        const j = await r.json();
+        document.getElementById('g').innerHTML = j.data.map(a => `
+            <div class="card" onclick="openAnime('${a.mal_id}', ${a.episodes || 12})">
+                <img src="${a.images.jpg.image_url}">
+                <p>${a.title}</p>
+            </div>`).join('');
+    }
+
+    function openAnime(id, total) {
+        mid = id;
+        const box = document.getElementById('ep-list');
+        box.style.display = 'grid';
+        box.innerHTML = '';
+        for(let i=1; i<=total; i++) {
+            const b = document.createElement('div');
+            b.style = "background:#222; padding:10px; border-radius:5px; cursor:pointer";
+            b.innerText = 'EP '+i;
+            b.onclick = () => { ep = i; play(); };
+            box.appendChild(b);
+        }
+    }
+
+    function play() {
+        let url = (srv === 1) 
+            ? `https://vidsrc.me/embed/anime?malId=${mid}&episode=${ep}`
+            : `https://vidsrc.cc/v2/embed/anime/${mid}/${ep}`;
+        
+        document.getElementById('player-area').innerHTML = `
+            <iframe src="${url}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+    }
+
+    function setSrv(n) { srv = n; if(mid) play(); }
+</script>
+</body>
+</html>
